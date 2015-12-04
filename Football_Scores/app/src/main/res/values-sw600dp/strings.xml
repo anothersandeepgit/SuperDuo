@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="empty_score_list">No Scores Available</string>
+    <string name="empty_score_list_no_network">No score information available. The network is not available to fetch score data.</string>
+    <string name="empty_score_list_server_down">No score information available. The server is not returning data.</string>
+    <string name="empty_score_list_server_error">No score information available. The server is not returning valid data. Please check for an updated version of Football Scores app.</string>
+
+    <!-- Key name for storing score status in SharedPreferences -->
+    <string name="pref_score_list_status_key" translatable="false">score_status</string>
+</resources>

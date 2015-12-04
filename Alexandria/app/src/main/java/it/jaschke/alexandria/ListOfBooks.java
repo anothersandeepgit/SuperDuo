@@ -1,6 +1,7 @@
 package it.jaschke.alexandria;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -14,13 +15,16 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import it.jaschke.alexandria.api.BookListAdapter;
 import it.jaschke.alexandria.api.Callback;
 import it.jaschke.alexandria.data.AlexandriaContract;
+import it.jaschke.alexandria.services.BookService;
 
 
-public class ListOfBooks extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class ListOfBooks extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,
+        SharedPreferences.OnSharedPreferenceChangeListener{
 
     private BookListAdapter bookListAdapter;
     private ListView bookList;
@@ -62,6 +66,10 @@ public class ListOfBooks extends Fragment implements LoaderManager.LoaderCallbac
         );
 
         bookList = (ListView) rootView.findViewById(R.id.listOfBooks);
+
+        View emptyView = rootView.findViewById(R.id.empty_book_list);
+        bookList.setEmptyView(emptyView);
+
         bookList.setAdapter(bookListAdapter);
 
         bookList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -117,6 +125,7 @@ public class ListOfBooks extends Fragment implements LoaderManager.LoaderCallbac
         if (position != ListView.INVALID_POSITION) {
             bookList.smoothScrollToPosition(position);
         }
+        updateEmptyView();
     }
 
     @Override
@@ -128,5 +137,45 @@ public class ListOfBooks extends Fragment implements LoaderManager.LoaderCallbac
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         activity.setTitle(R.string.books);
+    }
+
+    /*
+    Updates the empty list view with contextually relevant information that the user can
+    use to determine why they aren't seeing weather.
+ */
+    private void updateEmptyView() {
+        if (bookListAdapter.getCount() == 0) {
+            TextView tv = (TextView) getView().findViewById(R.id.empty_book_list);
+            String contentDescription = "";
+            if (null != tv) {
+                // if cursor is empty, why? do we have an invalid location
+                int message = R.string.empty_book_list;
+                @BookService.BookStatus int bookStatus = bookListAdapter.getBookStatus(getActivity());
+                switch (bookStatus) {
+                    case BookService.BOOK_STATUS_SERVER_DOWN:
+                        message = R.string.empty_book_list_server_down;
+                        contentDescription = getString(R.string.empty_book_list_server_down);
+                        break;
+                    case BookService.BOOK_STATUS_SERVER_INVALID:
+                        message = R.string.empty_book_list_server_error;
+                        contentDescription = getString(R.string.empty_book_list_server_error);
+                        break;
+                    default:
+                        if (!Utilities.isNetworkAvailable(getActivity())) {
+                            message = R.string.empty_book_list_no_network;
+                            contentDescription = getString(R.string.empty_book_list_no_network);
+                        }
+                }
+                tv.setText(message);
+                tv.setContentDescription(contentDescription);
+            }
+        }
+    }
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.e("MainScreenFragment", "in onSharedPreferenceChanged");
+        if ( key.equals(getString(R.string.pref_book_list_status_key)) ) {
+            updateEmptyView();
+        }
     }
 }

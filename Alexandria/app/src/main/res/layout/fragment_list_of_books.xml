@@ -39,13 +39,21 @@
                   android:layout_height="match_parent"
                   android:layout_alignParentLeft="true"
                   android:layout_marginLeft="0dp"
-                  android:layout_below="@+id/searchText"
+                  android:layout_below="@+id/empty_book_list"
                   android:layout_alignRight="@id/searchButton"
                   android:layout_alignParentRight="true"
                   android:layout_alignParentStart="true"
                   android:layout_toRightOf="@id/searchButton"/>
 
-
+        <!-- empty list -->
+        <TextView
+            android:id="@+id/empty_book_list"
+            android:text="@string/empty_book_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:layout_below="@+id/searchText"
+            />
 
     </RelativeLayout>
 
