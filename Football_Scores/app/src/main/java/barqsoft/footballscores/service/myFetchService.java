@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.annotation.IntDef;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -15,8 +16,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -24,13 +28,28 @@ import java.util.Vector;
 
 import barqsoft.footballscores.DatabaseContract;
 import barqsoft.footballscores.R;
+import barqsoft.footballscores.Utilies;
+import barqsoft.footballscores.scoresAdapter;
+
 
 /**
  * Created by yehya khaled on 3/2/2015.
  */
 public class myFetchService extends IntentService
 {
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({SCORE_STATUS_OK, SCORE_STATUS_SERVER_DOWN, SCORE_STATUS_SERVER_INVALID,  SCORE_STATUS_UNKNOWN})
+    public @interface ScoreStatus {}
+    public static final int SCORE_STATUS_OK = 0;
+    public static final int SCORE_STATUS_SERVER_DOWN = 1;
+    public static final int SCORE_STATUS_SERVER_INVALID = 2;
+    public static final int SCORE_STATUS_UNKNOWN = 3;
+
+
     public static final String LOG_TAG = "myFetchService";
+    public static final String ACTION_DATA_UPDATED =
+            "barqsoft.footballscores.service.ACTION_DATA_UPDATED";
     public myFetchService()
     {
         super("myFetchService");
@@ -47,88 +66,90 @@ public class myFetchService extends IntentService
 
     private void getData (String timeFrame)
     {
-        //Creating fetch URL
-        final String BASE_URL = "http://api.football-data.org/alpha/fixtures"; //Base URL
-        final String QUERY_TIME_FRAME = "timeFrame"; //Time Frame parameter to determine days
-        //final String QUERY_MATCH_DAY = "matchday";
+        if (Utilies.isNetworkAvailable(this)) {
 
-        Uri fetch_build = Uri.parse(BASE_URL).buildUpon().
-                appendQueryParameter(QUERY_TIME_FRAME, timeFrame).build();
-        //Log.v(LOG_TAG, "The url we are looking at is: "+fetch_build.toString()); //log spam
-        HttpURLConnection m_connection = null;
-        BufferedReader reader = null;
-        String JSON_data = null;
-        //Opening Connection
-        try {
-            URL fetch = new URL(fetch_build.toString());
-            m_connection = (HttpURLConnection) fetch.openConnection();
-            m_connection.setRequestMethod("GET");
-            m_connection.addRequestProperty("X-Auth-Token",getString(R.string.api_key));
-            m_connection.connect();
+            //Creating fetch URL
+            final String BASE_URL = "http://api.football-data.org/alpha/fixtures"; //Base URL
+            //final String BASE_URL = "http://www.google.com/ping"; //Base URL
+            final String QUERY_TIME_FRAME = "timeFrame"; //Time Frame parameter to determine days
+            //final String QUERY_MATCH_DAY = "matchday";
 
-            // Read the input stream into a String
-            InputStream inputStream = m_connection.getInputStream();
-            StringBuffer buffer = new StringBuffer();
-            if (inputStream == null) {
-                // Nothing to do.
-                return;
-            }
-            reader = new BufferedReader(new InputStreamReader(inputStream));
+            Uri fetch_build = Uri.parse(BASE_URL).buildUpon().
+                    appendQueryParameter(QUERY_TIME_FRAME, timeFrame).build();
+            //Log.v(LOG_TAG, "The url we are looking at is: "+fetch_build.toString()); //log spam
+            HttpURLConnection m_connection = null;
+            BufferedReader reader = null;
+            String JSON_data = null;
+            //Opening Connection
+            try {
+                URL fetch = new URL(fetch_build.toString());
+                m_connection = (HttpURLConnection) fetch.openConnection();
+                m_connection.setRequestMethod("GET");
+                m_connection.addRequestProperty("X-Auth-Token", getString(R.string.api_key));
+                m_connection.connect();
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
-                // But it does make debugging a *lot* easier if you print out the completed
-                // buffer for debugging.
-                buffer.append(line + "\n");
-            }
-            if (buffer.length() == 0) {
-                // Stream was empty.  No point in parsing.
-                return;
-            }
-            JSON_data = buffer.toString();
-        }
-        catch (Exception e)
-        {
-            Log.e(LOG_TAG,"Exception here" + e.getMessage());
-        }
-        finally {
-            if(m_connection != null)
-            {
-                m_connection.disconnect();
-            }
-            if (reader != null)
-            {
-                try {
-                    reader.close();
-                }
-                catch (IOException e)
-                {
-                    Log.e(LOG_TAG,"Error Closing Stream");
-                }
-            }
-        }
-        try {
-            if (JSON_data != null) {
-                //This bit is to check if the data contains any matches. If not, we call processJson on the dummy data
-                JSONArray matches = new JSONObject(JSON_data).getJSONArray("fixtures");
-                if (matches.length() == 0) {
-                    //if there is no data, call the function on dummy data
-                    //this is expected behavior during the off season.
-                    processJSONdata(getString(R.string.dummy_data), getApplicationContext(), false);
+                // Read the input stream into a String
+                InputStream inputStream = m_connection.getInputStream();
+                StringBuffer buffer = new StringBuffer();
+                if (inputStream == null) {
+                    // Nothing to do.
                     return;
                 }
+                reader = new BufferedReader(new InputStreamReader(inputStream));
 
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
+                    // But it does make debugging a *lot* easier if you print out the completed
+                    // buffer for debugging.
+                    buffer.append(line + "\n");
+                }
+                if (buffer.length() == 0) {
+                    // Stream was empty.  No point in parsing.
+                    scoresAdapter.setScoreStatus(this, SCORE_STATUS_SERVER_DOWN);
+                    return;
+                }
+                JSON_data = buffer.toString();
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "Exception here " + e.getMessage());
+                // If the code didn't successfully get the weather data, there's no point in attempting
+                // to parse it.
+                scoresAdapter.setScoreStatus(this, SCORE_STATUS_SERVER_DOWN);
+            } finally {
+                if (m_connection != null) {
+                    m_connection.disconnect();
+                }
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        Log.e(LOG_TAG, "Error Closing Stream");
 
-                processJSONdata(JSON_data, getApplicationContext(), true);
-            } else {
-                //Could not Connect
-                Log.d(LOG_TAG, "Could not connect to server.");
+                    }
+                }
             }
-        }
-        catch(Exception e)
-        {
-            Log.e(LOG_TAG,e.getMessage());
+            try {
+
+                if (JSON_data != null) {
+                    //This bit is to check if the data contains any matches. If not, we call processJson on the dummy data
+                    JSONArray matches = new JSONObject(JSON_data).getJSONArray("fixtures");
+                    if (matches.length() == 0) {
+                        //if there is no data, call the function on dummy data
+                        //this is expected behavior during the off season.
+                        processJSONdata(getString(R.string.dummy_data), getApplicationContext(), false);
+                        return;
+                    }
+
+
+                    processJSONdata(JSON_data, getApplicationContext(), true);
+                    scoresAdapter.setScoreStatus(this, SCORE_STATUS_OK);
+                } else {
+                    //Could not Connect
+                    Log.d(LOG_TAG, "Could not connect to server.");
+                }
+            } catch (Exception e) {
+                Log.e(LOG_TAG, e.getMessage());
+            }
         }
     }
     private void processJSONdata (String JSONdata,Context mContext, boolean isReal)
@@ -176,6 +197,7 @@ public class myFetchService extends IntentService
 
 
         try {
+            Log.e(LOG_TAG, "Before attempting JSON processing");
             JSONArray matches = new JSONObject(JSONdata).getJSONArray(FIXTURES);
 
 
@@ -226,7 +248,7 @@ public class myFetchService extends IntentService
                             mDate=mformat.format(fragmentdate);
                         }
                     }
-                    catch (Exception e)
+                    catch (ParseException e)
                     {
                         Log.d(LOG_TAG, "error here!");
                         Log.e(LOG_TAG,e.getMessage());
@@ -266,12 +288,24 @@ public class myFetchService extends IntentService
                     DatabaseContract.BASE_CONTENT_URI,insert_data);
 
             //Log.v(LOG_TAG,"Succesfully Inserted : " + String.valueOf(inserted_data));
+            updateWidgets();
         }
         catch (JSONException e)
         {
-            Log.e(LOG_TAG,e.getMessage());
+            @myFetchService.ScoreStatus int scoreStatus = scoresAdapter.getScoreStatus(this);
+            Log.e(LOG_TAG, "BEFORE CHANGE" + String.valueOf(scoreStatus));
+            scoresAdapter.setScoreStatus(this, SCORE_STATUS_SERVER_INVALID);
+            scoreStatus = scoresAdapter.getScoreStatus(this);
+            Log.e(LOG_TAG, "AFTER CHANGE" + String.valueOf(scoreStatus));
         }
 
+    }
+    private void updateWidgets() {
+        Context context = this;
+        // Setting the package ensures that only components in our app will receive the broadcast
+        Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED)
+                .setPackage(context.getPackageName());
+        context.sendBroadcast(dataUpdatedIntent);
     }
 }
 

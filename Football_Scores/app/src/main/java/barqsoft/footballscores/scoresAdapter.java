@@ -2,13 +2,17 @@ package barqsoft.footballscores;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.preference.PreferenceManager;
 import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+
+import barqsoft.footballscores.service.myFetchService;
 
 /**
  * Created by yehya khaled on 2/26/2015.
@@ -97,4 +101,26 @@ public class scoresAdapter extends CursorAdapter
         return shareIntent;
     }
 
+    /**
+     * Sets the score status into shared preference.  This function should not be called from
+     * the UI thread because it uses commit to write to the shared preferences.
+     * @param c Context to get the PreferenceManager from.
+     * @param scoreStatus The IntDef value to set
+     */
+    static public void setScoreStatus(Context c, @myFetchService.ScoreStatus int scoreStatus){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(c);
+        SharedPreferences.Editor spe = sp.edit();
+        spe.putInt(c.getString(R.string.pref_score_list_status_key), scoreStatus);
+        spe.commit();
+    }
+    /**
+     *
+     * @param c Context used to get the SharedPreferences
+     * @return the location status integer type
+     */
+    @SuppressWarnings("ResourceType")
+    static public @myFetchService.ScoreStatus int getScoreStatus(Context c){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(c);
+        return sp.getInt(c.getString(R.string.pref_score_list_status_key), myFetchService.SCORE_STATUS_UNKNOWN);
+    }
 }
