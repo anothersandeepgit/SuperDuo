@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.CursorAdapter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +24,7 @@ import it.jaschke.alexandria.services.DownloadImage;
  */
 public class BookListAdapter extends CursorAdapter {
 
+    final String infoNotAvailable = "NotAvailable";
 
     public static class ViewHolder {
         public final ImageView bookCover;
@@ -45,12 +48,20 @@ public class BookListAdapter extends CursorAdapter {
         ViewHolder viewHolder = (ViewHolder) view.getTag();
 
         String imgUrl = cursor.getString(cursor.getColumnIndex(AlexandriaContract.BookEntry.IMAGE_URL));
-        new DownloadImage(viewHolder.bookCover).execute(imgUrl);
+        Log.v("BOOKLISTADAPTER", imgUrl);
+        if (imgUrl.equals(infoNotAvailable)) {
+            viewHolder.bookCover.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.photo_na));
+            Log.v("BOOKLISTADAPTER", "IN_IF");
+        }else {
+            new DownloadImage(viewHolder.bookCover).execute(imgUrl);
+        }
 
         String bookTitle = cursor.getString(cursor.getColumnIndex(AlexandriaContract.BookEntry.TITLE));
+        bookTitle = (bookTitle.equals(infoNotAvailable)) ? context.getString(R.string.title_na) : bookTitle;
         viewHolder.bookTitle.setText(bookTitle);
 
         String bookSubTitle = cursor.getString(cursor.getColumnIndex(AlexandriaContract.BookEntry.SUBTITLE));
+        bookSubTitle = (bookSubTitle.equals(infoNotAvailable)) ? context.getString(R.string.subtitle_na) : bookSubTitle;
         viewHolder.bookSubTitle.setText(bookSubTitle);
     }
 

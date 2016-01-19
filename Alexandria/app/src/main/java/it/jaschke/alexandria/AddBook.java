@@ -79,6 +79,7 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                 }
                 if(ean.length()<13){
                     clearFields();
+                    updateEmptyView(false);
                     return;
                 }
                 //Once we have an ISBN, start a book intent
@@ -216,10 +217,11 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
     @Override
     public void onLoadFinished(android.support.v4.content.Loader<Cursor> loader, Cursor data) {
         if (!data.moveToFirst()) {
-            updateEmptyView();
+            updateEmptyView(false);
             return;
         }
 
+        updateEmptyView(true);
         String bookTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.TITLE));
         ((TextView) rootView.findViewById(R.id.bookTitle)).setText(bookTitle);
 
@@ -264,13 +266,15 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
         activity.setTitle(R.string.scan);
     }
 
-    private void updateEmptyView() {
+    private void updateEmptyView(boolean isBookAvailable) {
 
-            TextView tv = (TextView) getView().findViewById(R.id.bookEmpty);
-            String contentDescription = "";
-            if (null != tv) {
+        TextView tv = (TextView) getView().findViewById(R.id.bookEmpty);
+        String contentDescription = "";
+        int message = R.string.empty_book_not_found;
+        if (null != tv) {
+            if(!isBookAvailable) {
                 // if cursor is empty, why? do we have an invalid location
-                int message = R.string.empty_book_list;
+                message = R.string.empty_book_list;
                 @BookService.BookStatus int bookStatus = BookListAdapter.getBookStatus(getActivity());
                 switch (bookStatus) {
                     case BookService.BOOK_STATUS_NOT_FOUND:
@@ -291,8 +295,12 @@ public class AddBook extends Fragment implements LoaderManager.LoaderCallbacks<C
                             contentDescription = getString(R.string.empty_book_list_no_network);
                         }
                 }
-                tv.setText(message);
-                tv.setContentDescription(contentDescription);
+            } else {
+                message = R.string.addbook_book_found;
+                contentDescription = getString(R.string.addbook_book_found);
             }
+            tv.setText(message);
+            tv.setContentDescription(contentDescription);
+        }
     }
 }

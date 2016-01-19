@@ -54,6 +54,7 @@ public class BookService extends IntentService {
     public static final String DELETE_BOOK = "it.jaschke.alexandria.services.action.DELETE_BOOK";
 
     public static final String EAN = "it.jaschke.alexandria.services.extra.EAN";
+    final String infoNotAvailable = "NotAvailable";
 
     public BookService() {
         super("Alexandria");
@@ -177,6 +178,7 @@ public class BookService extends IntentService {
             final String IMG_URL_PATH = "imageLinks";
             final String IMG_URL = "thumbnail";
 
+
             try {
                 JSONObject bookJson = new JSONObject(bookJsonString);
                 JSONArray bookArray;
@@ -192,31 +194,32 @@ public class BookService extends IntentService {
 
                 JSONObject bookInfo = ((JSONObject) bookArray.get(0)).getJSONObject(VOLUME_INFO);
 
-                String title = bookInfo.getString(TITLE);
+                String title = bookInfo.has(TITLE) ? bookInfo.getString(TITLE) : infoNotAvailable;
 
-                String subtitle = "";
-                if (bookInfo.has(SUBTITLE)) {
-                    subtitle = bookInfo.getString(SUBTITLE);
-                }
+                String subtitle = bookInfo.has(SUBTITLE) ? bookInfo.getString(SUBTITLE) : infoNotAvailable;
 
-                String desc = "";
-                if (bookInfo.has(DESC)) {
-                    desc = bookInfo.getString(DESC);
-                }
+                String desc = bookInfo.has(DESC) ? bookInfo.getString(DESC) : infoNotAvailable;
 
                 String imgUrl = "";
                 if (bookInfo.has(IMG_URL_PATH) && bookInfo.getJSONObject(IMG_URL_PATH).has(IMG_URL)) {
                     imgUrl = bookInfo.getJSONObject(IMG_URL_PATH).getString(IMG_URL);
+                } else {
+                    imgUrl = infoNotAvailable;
                 }
-
                 writeBackBook(ean, title, subtitle, desc, imgUrl);
 
                 if (bookInfo.has(AUTHORS)) {
-                    writeBackAuthors(ean, bookInfo.getJSONArray(AUTHORS));
+                    writeBackAuthors(ean, bookInfo.getJSONArray(AUTHORS), true);
+                } else {
+                    writeBackAuthors(ean, null, false);
                 }
+
                 if (bookInfo.has(CATEGORIES)) {
-                    writeBackCategories(ean, bookInfo.getJSONArray(CATEGORIES));
+                    writeBackCategories(ean, bookInfo.getJSONArray(CATEGORIES), true);
+                } else {
+                    writeBackCategories(ean, null, false);
                 }
+
                 BookListAdapter.setBookStatus(this, BOOK_STATUS_OK);
             } catch (JSONException e) {
                 Log.e(LOG_TAG, "Error ", e);
@@ -237,23 +240,35 @@ public class BookService extends IntentService {
         getContentResolver().insert(AlexandriaContract.BookEntry.CONTENT_URI,values);
     }
 
-    private void writeBackAuthors(String ean, JSONArray jsonArray) throws JSONException {
+    private void writeBackAuthors(String ean, JSONArray jsonArray, boolean isAuthor) throws JSONException {
         ContentValues values= new ContentValues();
-        for (int i = 0; i < jsonArray.length(); i++) {
+        if (isAuthor) {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                values.put(AlexandriaContract.AuthorEntry._ID, ean);
+                values.put(AlexandriaContract.AuthorEntry.AUTHOR, jsonArray.getString(i));
+                getContentResolver().insert(AlexandriaContract.AuthorEntry.CONTENT_URI, values);
+                values = new ContentValues();
+            }
+        }else {
             values.put(AlexandriaContract.AuthorEntry._ID, ean);
-            values.put(AlexandriaContract.AuthorEntry.AUTHOR, jsonArray.getString(i));
+            values.put(AlexandriaContract.AuthorEntry.AUTHOR, infoNotAvailable);
             getContentResolver().insert(AlexandriaContract.AuthorEntry.CONTENT_URI, values);
-            values= new ContentValues();
         }
     }
 
-    private void writeBackCategories(String ean, JSONArray jsonArray) throws JSONException {
+    private void writeBackCategories(String ean, JSONArray jsonArray, boolean isCategories) throws JSONException {
         ContentValues values= new ContentValues();
-        for (int i = 0; i < jsonArray.length(); i++) {
+        if (isCategories) {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                values.put(AlexandriaContract.CategoryEntry._ID, ean);
+                values.put(AlexandriaContract.CategoryEntry.CATEGORY, jsonArray.getString(i));
+                getContentResolver().insert(AlexandriaContract.CategoryEntry.CONTENT_URI, values);
+                values = new ContentValues();
+            }
+        } else {
             values.put(AlexandriaContract.CategoryEntry._ID, ean);
-            values.put(AlexandriaContract.CategoryEntry.CATEGORY, jsonArray.getString(i));
+            values.put(AlexandriaContract.CategoryEntry.CATEGORY, infoNotAvailable);
             getContentResolver().insert(AlexandriaContract.CategoryEntry.CONTENT_URI, values);
-            values= new ContentValues();
         }
     }
  }

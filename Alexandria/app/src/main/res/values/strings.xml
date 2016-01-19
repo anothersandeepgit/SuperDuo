@@ -43,11 +43,17 @@
     <string name="barcode_failure">No barcode captured</string>
     <string name="barcode_error">"Error reading barcode: %1$s"</string>
 
-    <string name="empty_book_list">The book list is currently empty.</string>
+    <string name="empty_book_list">No Books Yet!</string>
     <string name="empty_book_list_no_network">The network is not available to fetch book data.</string>
     <string name="empty_book_list_server_down">The server is not returning data.</string>
     <string name="empty_book_list_server_error">The server is not returning valid data.</string>
     <string name="pref_book_list_status_key">book_status</string>
     <string name="empty_book_not_found">Book with given ISBN not found</string>
+    <string name="subtitle_na">Subtitle Not Available</string>
+    <string name="title_na">Title Not Available</string>
+    <string name="desc_na">Description Not Available</string>
+    <string name="author_na">Author Name Not Available</string>
+    <string name="category_na">Category Info Not Available</string>
+    <string name="addbook_book_found">Book Found!</string>
 
 </resources>

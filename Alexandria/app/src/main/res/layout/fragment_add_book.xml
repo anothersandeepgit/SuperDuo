@@ -33,6 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/scan_button"
+                android:contentDescription="@string/scan_button"
                 android:id="@+id/scan_button"/>
 
         </LinearLayout>
@@ -59,9 +60,9 @@
             android:textStyle="bold"
             android:layout_marginTop="25dp"
             android:paddingRight="20dp"
-            android:layout_below="@+id/bookStatus"
-            android:layout_alignLeft="@+id/bookStatus"
-            android:layout_alignStart="@+id/bookStatus"/>
+            android:layout_below="@+id/bookEmpty"
+            android:layout_alignLeft="@+id/bookEmpty"
+            android:layout_alignStart="@+id/bookEmpty"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -117,6 +118,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="fill_parent"
                 android:text="@string/cancel_button"
+                android:contentDescription="@string/cancel_button"
                 android:layout_weight="1"
                 style="?android:attr/buttonBarButtonStyle"
                 android:id="@+id/delete_button"
@@ -128,6 +130,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="fill_parent"
                 android:text="@string/ok_button"
+                android:contentDescription="@string/ok_button"
                 android:visibility="invisible"
                 android:layout_weight="1"
                 android:id="@+id/save_button"

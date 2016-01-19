@@ -33,6 +33,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/read_barcode"
+        android:contentDescription="@string/read_barcode"
         android:id="@+id/read_barcode"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true" />
@@ -41,6 +42,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/auto_focus"
+        android:contentDescription="@string/auto_focus"
         android:id="@+id/auto_focus"
         android:layout_below="@+id/barcode_value"
         android:layout_alignParentLeft="true"
@@ -52,6 +54,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/use_flash"
+        android:contentDescription="@string/use_flash"
         android:id="@+id/use_flash"
         android:layout_alignTop="@+id/auto_focus"
         android:layout_alignParentRight="true"
