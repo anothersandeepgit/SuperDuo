@@ -4,8 +4,7 @@
     package="barqsoft.footballscores" >
 
     <uses-permission
-        android:name="android.permission.INTERNET"
-        android:maxSdkVersion="23" />
+        android:name="android.permission.INTERNET" />
 
     <!-- Permissions required to make our UI more friendly -->
     <uses-permission

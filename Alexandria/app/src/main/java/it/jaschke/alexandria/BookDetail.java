@@ -74,6 +74,11 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
 
         MenuItem menuItem = menu.findItem(R.id.action_share);
         shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+        // If onLoadFinished happens before this, we can go ahead and set the share intent now.
+        if (bookTitle != null) {
+            shareActionProvider.setShareIntent(createBookIntent());
+        }
+
     }
 
     @Override
@@ -88,6 +93,15 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
         );
     }
 
+    private Intent createBookIntent() {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        //shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_text) + bookTitle);
+        return shareIntent;
+    }
+
     @Override
     public void onLoadFinished(android.support.v4.content.Loader<Cursor> loader, Cursor data) {
         if (!data.moveToFirst()) {
@@ -98,11 +112,10 @@ public class BookDetail extends Fragment implements LoaderManager.LoaderCallback
         bookTitle = (bookTitle.equals(infoNotAvailable)) ? getContext().getString(R.string.title_na) : bookTitle;
         ((TextView) rootView.findViewById(R.id.fullBookTitle)).setText(bookTitle);
 
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
-        shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_text)+bookTitle);
-        shareActionProvider.setShareIntent(shareIntent);
+        // If onCreateOptionsMenu has already happened, we need to update the share intent now.
+        if(shareActionProvider != null) {
+            shareActionProvider.setShareIntent(createBookIntent());
+        }
 
         String bookSubTitle = data.getString(data.getColumnIndex(AlexandriaContract.BookEntry.SUBTITLE));
         bookSubTitle = (bookSubTitle.equals(infoNotAvailable)) ? getContext().getString(R.string.subtitle_na) : bookSubTitle;

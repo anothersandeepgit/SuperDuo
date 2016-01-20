@@ -9,7 +9,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -91,15 +90,6 @@ public class MainScreenFragment extends Fragment implements LoaderManager.Loader
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor)
     {
-        //Log.v(FetchScoreTask.LOG_TAG,"loader finished");
-        //cursor.moveToFirst();
-        /*
-        while (!cursor.isAfterLast())
-        {
-            Log.v(FetchScoreTask.LOG_TAG,cursor.getString(1));
-            cursor.moveToNext();
-        }
-        */
 
         int i = 0;
         cursor.moveToFirst();
@@ -108,7 +98,6 @@ public class MainScreenFragment extends Fragment implements LoaderManager.Loader
             i++;
             cursor.moveToNext();
         }
-        //Log.v(FetchScoreTask.LOG_TAG,"Loader query: " + String.valueOf(i));
         mAdapter.swapCursor(cursor);
         //mAdapter.notifyDataSetChanged();
         updateEmptyView();
@@ -154,7 +143,7 @@ public class MainScreenFragment extends Fragment implements LoaderManager.Loader
     }
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.e("MainScreenFragment", "in onSharedPreferenceChanged");
+
         if ( key.equals(getString(R.string.pref_score_list_status_key)) ) {
             updateEmptyView();
         }
